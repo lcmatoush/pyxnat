@@ -1,6 +1,3 @@
-import os
-import re
-import glob
 import csv
 import difflib
 try:
@@ -9,23 +6,24 @@ except ImportError:
     from io import StringIO
 try:
     unicode
+    import sys
+    reload(sys)  # Reload does the trick!
+    sys.setdefaultencoding('UTF8')
 except NameError:
     unicode = str
 from six import string_types
 
 from lxml import etree
-import json
 
 from .jsonutil import JsonTable, get_column, get_where, get_selection
 from .errors import is_xnat_error, catch_error
 from .errors import ProgrammingError, NotSupportedError
 from .errors import DataError, DatabaseError
-from .uriutil import check_entry
 
-search_nsmap = {'xdat':'http://nrg.wustl.edu/security',
-                'xsi':'http://www.w3.org/2001/XMLSchema-instance'}
+search_nsmap = {'xdat': 'http://nrg.wustl.edu/security',
+                'xsi': 'http://www.w3.org/2001/XMLSchema-instance'}
 
-special_ops = {'*':'%', }
+special_ops = {'*': '%', }
 
 
 def build_search_document(root_element_name, columns, criteria_set,
@@ -128,6 +126,7 @@ def build_search_document(root_element_name, columns, criteria_set,
 
     return etree.tostring(root_node.getroottree())
 
+
 def build_criteria_set(container_node, criteria_set):
 
     for criteria in criteria_set:
@@ -146,8 +145,7 @@ def build_criteria_set(container_node, criteria_set):
         if isinstance(criteria, (tuple)):
             if len(criteria) != 3:
                 raise ProgrammingError('%s should be a 3-element tuple' %
-                                        str(criteria)
-                                        )
+                                       str(criteria))
 
             constraint_node = \
                 etree.Element(etree.QName(search_nsmap['xdat'], 'criteria'),
@@ -190,6 +188,7 @@ def build_criteria_set(container_node, criteria_set):
 
     return container_node
 
+
 def query_from_xml(document):
     query = {}
     root = etree.fromstring(document)
@@ -222,10 +221,11 @@ def query_from_xml(document):
                                   namespaces=root.nsmap)[0]
 
         query['constraints'] = query_from_criteria_set(search_where)
-    except:
+    except Exception:
         query['constraints'] = [('%s/ID' % query['row'], 'LIKE', '%'), 'AND']
 
     return query
+
 
 def query_from_criteria_set(criteria_set):
     query = []
@@ -249,6 +249,7 @@ def query_from_criteria_set(criteria_set):
 
     return query
 
+
 def rpn_contraints(rpn_exp):
     left = []
     right = []
@@ -259,7 +260,7 @@ def rpn_contraints(rpn_exp):
             if 'AND' in right or 'OR' in right and left == []:
                 try:
                     operator = right.pop(right.index('AND'))
-                except:
+                except Exception:
                     operator = right.pop(right.index('OR'))
 
                 left = [right[0]]
@@ -294,6 +295,7 @@ def rpn_contraints(rpn_exp):
     return left if left != [] else right
 
 # ---------------------------------------------------------------
+
 
 class SearchManager(object):
     """ Search interface.
@@ -370,7 +372,6 @@ class SearchManager(object):
         self._save_search(row, columns, constraints,
                           name, description, sharing)
 
-
     def saved(self, with_description=False):
         """ Returns the names of accessible saved search on the server.
         """
@@ -428,12 +429,12 @@ class SearchManager(object):
             else:
                 return query_from_xml(bundle)
 
-
         content = self._intf._exec(
             '%s/search/saved/%s/results?format=csv' % (self._intf._entry,
                                                        search_id), 'GET')
 
-        results = csv.reader(StringIO(content.decode('utf-8')), delimiter=',', quotechar='"')
+        results = csv.reader(StringIO(content.decode('utf-8')), delimiter=',',
+                             quotechar='"')
 
         headers = next(results)
 
@@ -470,7 +471,7 @@ class SearchManager(object):
             Parameters
             ----------
             name: string
-                Name under which the template is save in XNAT. A 'template_' is
+                Name under which the template is save in XNAT. A template is
                 prepended to the name so that it appear clearly as a template
                 on the web interface.
             row: string
@@ -480,7 +481,8 @@ class SearchManager(object):
                 List of data fields from
                 `Interface.inspect.datatypes('*', '*')`
             constraints: list
-                See also: `Search.where()`, values are keywords for the template
+                See also: `Search.where()`, values are keywords for the
+                template
             sharing: string | list
                 Define by whom the query is visible.
                 If sharing is a string it may be either
@@ -488,7 +490,6 @@ class SearchManager(object):
                 Otherwise a list of valid logins for the XNAT server
                 from `Interface.users()`.
         """
-
 
         def _make_template(query):
             query_template = []
@@ -541,6 +542,8 @@ class SearchManager(object):
 
     def use_template(self, name, values):
         """
+            Performs a search query using a previously saved template.
+
             Parameters
             ----------
             name: string
@@ -614,7 +617,8 @@ class SearchManager(object):
             return bundle
         else:
             _query = query_from_xml(bundle)
-            return _query['row'], _query['columns'], _query['constraints'], _query['description']
+            return (_query['row'], _query['columns'], _query['constraints'],
+                    _query['description'])
 
     def delete_template(self, name):
         """ Deletes a search template.
@@ -710,7 +714,8 @@ class Search(object):
         if is_xnat_error(content):
             catch_error(content)
 
-        results = csv.reader(StringIO(content.decode('utf-8')), delimiter=',', quotechar='"')
+        results = csv.reader(StringIO(content.decode('utf-8')), delimiter=',',
+                             quotechar='"')
         headers = next(results)
 
         headers_of_interest = []
@@ -719,8 +724,8 @@ class Search(object):
             try:
                 headers_of_interest.append(
                     difflib.get_close_matches(
-                        column.split(self._row + '/')[0].lower() \
-                            or column.split(self._row + '/')[1].lower(),
+                        column.split(self._row + '/')[0].lower()
+                        or column.split(self._row + '/')[1].lower(),
                         headers)[0]
                     )
             except IndexError:

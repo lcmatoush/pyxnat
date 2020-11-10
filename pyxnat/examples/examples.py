@@ -6,7 +6,10 @@ import pyxnat
 
 url = 'https://imagen.cea.fr/imagen_database'
 
+login = ''
+password = ''
 interface = pyxnat.Interface(url, login, password)
+
 
 def bet(in_image):
     path, name = os.path.split(in_image)
@@ -20,15 +23,16 @@ def bet(in_image):
 
     return out_image
 
+
 def notify(message):
     print('<== %s' % message[-120:])
 
+
 pool = Pool(processes=8)
+uri = '//experiments/*SessionA*/assessors/*ADNI*/out/resources/files'
+iu = interface.select(uri)
 
-for mprage in interface.select(
-    '//experiments/*SessionA*/assessors/*ADNI*/out/resources/files'
-    ).where([('psytool:tci_parentData/TCI051', '=', '1'), 'AND']):
-
+for mprage in iu.where([('psytool:tci_parentData/TCI051', '=', '1'), 'AND']):
     pool.apply_async(bet, (mprage.get(),), callback=notify)
 
 pool.close()

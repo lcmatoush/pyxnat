@@ -1,5 +1,6 @@
-.. module:: pyxnat
+:orphan:
 
+.. module:: pyxnat
 
 Installation
 ============
@@ -32,30 +33,7 @@ For development purposes:
 
 - *python-nose* v1.2.1+ to run the unit tests
 - *coverage* v3.6+
-- *numpydoc* to build documentation
 
-
-The `easy_install` way
------------------------
-
-The easiest way to install :mod:`pyxnat` is (provided that you have `setuptools`
-installed) to run::
-
-    easy_install pyxnat
-
-You may need to run the above command as administrator
-
-On a Unix environment, it is better to install outside of the hierarchy
-managed by the system::
-
-    easy_install --prefix /usr/local pyxnat
-
-.. warning::
-
-    Packages installed via `easy_install` override the Python module lookup
-    mechanism and thus may confuse people unfamiliar with
-    `setuptools`. Although it may look more complicated, the manual way would be
-    recommended, as described in the following paragraph.
 
 The manual way
 ---------------

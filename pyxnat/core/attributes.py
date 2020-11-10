@@ -14,6 +14,7 @@ class EAttrs(object):
     """ Accessor class to resource fields.
 
         Help to retrieve the attributes paths relevant to this element::
+
             >>> subject.attrs()
             ['xnat:subjectData/sharing',
              'xnat:subjectData/sharing/share',
@@ -26,6 +27,7 @@ class EAttrs(object):
          is available. To retrieve the paths, the corresponding
          schemas must be downloaded first through the schema
          management interface in order to be parsed::
+
              >>> interface.manage.schemas.add('xnat.xsd')
              >>> interface.manage.schemas.add('myschema/myschema.xsd')
     """
@@ -45,7 +47,6 @@ class EAttrs(object):
         """ List the attributes paths relevant to this element.
         """
         paths = []
-        self._intf.manage.schemas._init()
         for root in self._intf.manage.schemas._trees.values():
             paths.extend(datatype_attributes(root, self._get_datatype()))
         return paths
@@ -57,10 +58,7 @@ class EAttrs(object):
         return self._datatype
 
     def _get_id(self):
-        if self._id is None:
-            self._id = self._eobj.id()
-
-        return self._id
+        return self._eobj.id()
 
     def set(self, path, value, **kwargs):
         """ Set an attribute.
@@ -73,19 +71,18 @@ class EAttrs(object):
                 The attribute's value. Note that the python type is
                 always a string but the content of the value must
                 match what is defined in the schema.
-                    e.g. an element defined as a float in the schema
-                    must be given a string containing a number, a
-                    valid date must follow the ISO 8601 which is the
-                    standard representation for dates and times
-                    established by the W3C.
+                e.g. an element defined as a float in the schema
+                must be given a string containing a number, a
+                valid date must follow the ISO 8601 which is the
+                standard representation for dates and times
+                established by the W3C.
         """
         dt = self._get_datatype()
         if dt is None:
             dt = ''
-        put_uri = self._eobj._uri + '?xsiType=%s&%s=%s' % (quote(dt)
-                                                         , quote(path)
-                                                         , quote(value)
-                                              )
+        put_uri = self._eobj._uri + '?xsiType=%s&%s=%s' % (quote(dt),
+                                                           quote(path),
+                                                           quote(value))
 
         self._intf._exec(put_uri, 'PUT', **kwargs)
 
@@ -103,13 +100,9 @@ class EAttrs(object):
                 The dict of key values to set. It follows the same
                 principles as the single `set()` method.
         """
-
-        query_str = '?xsiType=%s' % (quote(self._get_datatype())) + ''.join(['&%s=%s' % (quote(path),
-                                               quote(val)
-                                               )
-                                    for path, val in dict_attrs.items()
-                                    ]
-                                   )
+        t = ['&%s=%s' % (quote(path), quote(val))
+             for path, val in dict_attrs.items()]
+        query_str = '?xsiType=%s' % quote(self._get_datatype()) + ''.join(t)
 
         put_uri = self._eobj._uri + query_str
 
@@ -132,24 +125,23 @@ class EAttrs(object):
             A string containing the value.
         """
         query_str = '?columns=ID,%s' % path
-
         get_uri = uri_parent(self._eobj._uri) + query_str
-        jdata = JsonTable(self._intf._get_json(get_uri)
-                          ).where(ID=self._get_id())
+
+        jdata = JsonTable(self._intf._get_json(get_uri))
+        jdata = jdata.where(ID=self._get_id())
 
         # unfortunately the return headers do not always have the
         # expected name
 
         header = difflib.get_close_matches(path.split('/')[-1],
-                                           jdata.headers()
-                                           )
+                                           jdata.headers())
 
         if header == []:
             header = difflib.get_close_matches(path, jdata.headers())[0]
         else:
             header = header[0]
 
-        replaceSlashS = lambda x : x.replace('\s', ' ')
+        replaceSlashS = lambda x: x.replace('\s', ' ')
         if type(jdata.get(header)) == list:
             return map(replaceSlashS, jdata.get(header))
         else:

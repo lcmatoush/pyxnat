@@ -1,8 +1,4 @@
 import re
-from datetime import datetime
-from os import path
-from glob import iglob
-
 from lxml import etree
 
 from .jsonutil import JsonTable
@@ -21,17 +17,16 @@ def get_subject_id(location):
 
 class XpathStore(object):
 
-    """ This utility class is used to query XML files describing XNAT 
+    """ This utility class is used to query XML files describing XNAT
         subjects but which are stored in the cache directory. Xpath is
         used as the query lanaguage but a few helpers are provided
         to make simple queries.
     """
-    
+
     def __init__(self, interface):
         self._intf = interface
         self._nsmap = {}
         self._tree = etree.Element('Store')
-        
 
     def __call__(self, xpath):
         if self._tree is None:
@@ -51,7 +46,6 @@ class XpathStore(object):
         else:
             self._tree.append(new_subject)
 
-
     def _last_modified(self):
         entry_point = self._intf._get_entry_point()
         uri = '%s/subjects?columns=last_modified' % entry_point
@@ -59,15 +53,13 @@ class XpathStore(object):
         return dict(JsonTable(self._intf._get_json(uri),
                               order_by=['ID', 'last_modified']
                               ).select(['ID', 'last_modified']
-                                       ).items()
-                    )
+                                       ).items())
 
     def update(self):
         """ Updates the xml files in the cachedir.
         """
 
         self.checkout(subjects=self.subjects())
-            
 
     def checkout(self, project=None, subjects=None):
         """ Downloads all the subject XMLs for a project or a list
@@ -89,7 +81,6 @@ class XpathStore(object):
                           self._intf._get_entry_point(), sid))
                           )
 
-
     def subject(self, subject_id):
         tmp = self.__call__('//xnat:Subject[@ID="%s"]' % (subject_id))
 
@@ -97,7 +88,6 @@ class XpathStore(object):
             return tmp[1]
         return None
 
-                    
     def subjects(self):
         """ Returns all the subject ids.
         """
@@ -129,7 +119,7 @@ class XpathStore(object):
         for element in self.__call__('//xnat:Subject/descendant::*'):
             for ns in element.nsmap:
                 if element.nsmap[ns] in element.tag:
-                    n = element.tag.replace('{%s}' % element.nsmap[ns], 
+                    n = element.tag.replace('{%s}' % element.nsmap[ns],
                                             '%s:' % ns)
                     elements.add(n)
 
@@ -142,7 +132,7 @@ class XpathStore(object):
 
         for element in self.__call__('//%s' % name):
             attrs.append(element.attrib)
-        
+
         return attrs
 
     def element_keys(self, name):
@@ -153,7 +143,7 @@ class XpathStore(object):
         for element in self.__call__('//%s' % name):
             for element_key in element.keys():
                 keys.add(element_key)
-        
+
         return list(keys)
 
     def element_values(self, name, key):
@@ -163,11 +153,10 @@ class XpathStore(object):
 
         for subject in self.__call__('//%s' % name):
             values.add(subject.get(key))
-        
+
         return list(values)
 
     def element_text(self, name):
         """ Returns the text values of this specific element.
         """
         return list(set(self.__call__('//%s/child::text()' % name)))
-

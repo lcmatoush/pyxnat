@@ -36,9 +36,8 @@ For development purposes:
 
 - *python-nose* v1.2.1 or higher
 - *coverage* v3.6 or higher
-- *numpydoc* to build the documentation
 
-See the `full installation instructions <https://pyxnat.readthedocs.io/en/latest/installing.html>`_
+See the `full installation instructions <https://pyxnat.github.io/pyxnat/installing.html>`_
 for recommended and optional dependencies.
 
 Installation from sources
@@ -53,7 +52,7 @@ where you found this file after cloning the git repo), execute::
 Documentation
 =============
 
-The official documentation is hosted at: https://pyxnat.readthedocs.io/en/latest/
+The official documentation is hosted at: https://pyxnat.github.io/pyxnat
 
 Running the test suite
 =========================
@@ -99,7 +98,6 @@ Building the documentation
 
 Building the docs requires to have `setuptools <https://pypi.org/project/setuptools/>`_
 and `sphinx <http://www.sphinx-doc.org/en/master/>`_ (v2.0+) installed.
-You will also need the `numpydoc <https://pypi.org/project/numpydoc/>`_ package.
 Then run the command::
 
     python setup.py build_sphinx

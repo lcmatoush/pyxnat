@@ -1,14 +1,17 @@
-import os
+from pyxnat import Interface
+import os.path as op
+from . import skip_if_no_network
 
-from .. import Interface
 
-_modulepath = os.path.dirname(os.path.abspath(__file__))
+_modulepath = op.dirname(op.abspath(__file__))
 
-central = Interface(config=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'central.cfg'))
+fp = op.join(op.dirname(op.abspath(__file__)), 'central.cfg')
+central = Interface(config=fp)
 
+
+@skip_if_no_network
 def test_global_scan_listing():
-    assert central.array.scans(project_id='CENTRAL_OASIS_CS', 
-                               experiment_type='xnat:mrSessionData', 
+    assert central.array.scans(project_id='CENTRAL_OASIS_CS',
+                               experiment_type='xnat:mrSessionData',
                                scan_type='xnat:mrScanData'
                                )
-

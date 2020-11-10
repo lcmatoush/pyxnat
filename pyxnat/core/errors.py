@@ -57,13 +57,16 @@ def parse_put_error_message(message):
                                           )[1].rsplit(':', 1)[1].strip('}\'')
 
                 required_fields.append((datatype_name, element_name))
-            except:
+            except Exception:
                 continue
 
     return required_fields
 
 
 def catch_error(msg_or_exception, full_response=None):
+
+    if isinstance(msg_or_exception, bytes):
+        msg_or_exception = msg_or_exception.decode()
 
     # handle errors returned by the xnat server
     if isinstance(msg_or_exception, (str, unicode)):

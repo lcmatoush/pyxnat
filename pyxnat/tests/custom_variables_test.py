@@ -1,36 +1,49 @@
 import os
 from uuid import uuid1
+from pyxnat import Interface
+import os.path as op
+from . import skip_if_no_network
 
-from .. import Interface
 
-#central = Interface(config=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'central.cfg'))
-central = Interface(config='.xnat.cfg')
-project = central.select.project('nosetests')
+fp = op.join(op.dirname(op.abspath(__file__)), 'central.cfg')
+central = Interface(config=fp)
+project = central.select.project('nosetests5')
 
-variables = {'Subjects' : {'newgroup' : {'foo' : 'string', 'bar' : 'int'}}}
+variables = {'Subjects': {'newgroup': {'foo': 'string', 'bar': 'int'}}}
 
 sid = uuid1().hex
 eid = uuid1().hex
 cid = uuid1().hex
 
-scan = project.subject(sid).experiment(eid).scan(cid).insert(use_label=True)
+if not os.environ.get('PYXNAT_SKIP_NETWORK_TESTS'):
+    sc = project.subject(sid).experiment(eid).scan(cid)
+    scan = sc.insert(use_label=True)
 
-# def test_add_custom_variables():
-#     project.add_custom_variables(variables)
 
-# def test_get_custom_variables():
-#     assert project.get_custom_variables() == variables
-
-def test_set_param():
-
+@skip_if_no_network
+def test_01_set_param():
     scan.set_param('foo', 'foostring')
     scan.set_param('bar', '1')
 
     assert scan.params() == ['foo', 'bar']
 
-def test_get_params():
+
+@skip_if_no_network
+def test_02_get_params():
     assert scan.get_params() == ['foostring', '1']
 
-def test_params_cleanup():
+
+@skip_if_no_network
+def test_03_params_cleanup():
     project.subject(sid).delete()
     assert not project.subject(sid).exists()
+
+
+@skip_if_no_network
+def test_04_add_custom_variables():
+    project.add_custom_variables(variables)
+
+
+@skip_if_no_network
+def test_05_get_custom_variables():
+    project.get_custom_variables()

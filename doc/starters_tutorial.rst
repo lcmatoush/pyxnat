@@ -1,3 +1,5 @@
+:orphan:
+
 .. module:: pyxnat
 
 ==============================
@@ -325,9 +327,7 @@ type in the XNAT schema.
     >>> my_project.attrs.mget(['xnat:projectData/keywords', 'secondary_ID'])
     ['test porject', 'myproject']
 
-_____
 
-.. [#] http://www.xnat.org/XNAT+REST+XML+Path+Shortcuts
 
 
 The search engine
@@ -336,10 +336,9 @@ The search engine
 The XNAT search engine can be queried via the REST model. It can be
 used to retrieve a specific subset of REST resources or a table
 containing the relevant values. The following queries find all the
-subjects that are within `my_project` or that have an age superior to
-14::
+subjects that are within `my_project` older than 14::
 
-    >>> contraints = [('xnat:subjectData/SUBJECT_ID','LIKE','%'),
+    >>> constraints = [('xnat:subjectData/SUBJECT_ID','LIKE','%'),
                       ('xnat:subjectData/PROJECT', '=', 'my_project'),
                       'OR',
                       [('xnat:subjectData/AGE','>','14'),
@@ -347,14 +346,14 @@ subjects that are within `my_project` or that have an age superior to
                        ]
                       ]
     >>> # retrieve experiments
-    >>> interface.select('//experiments').where(contraints)
+    >>> interface.select('//experiments').where(constraints)
     >>> # retrieve table with one subject per row and the columns SUBJECT_ID and AGE
-    >>> interface.select('xnat:subjectData', ['xnat:subjectData/SUBJECT_ID', 'xnat:subjectData/AGE']).where(contraints)
+    >>> interface.select('xnat:subjectData', ['xnat:subjectData/SUBJECT_ID', 'xnat:subjectData/AGE']).where(constraints)
 
 See the ``Search``, ``SeachManager`` and ``CObject`` classes reference
 documentation for further details.
 
-To get the searchable types and fields to put in the contraints, rows
+To get the searchable types and fields to put in the constraints, rows
 and columns parameters, use the ``Interface.inspect.datatypes``
 method::
 

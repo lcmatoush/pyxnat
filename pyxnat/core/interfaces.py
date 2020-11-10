@@ -1,21 +1,21 @@
 import os
 import time
-import tempfile
 import getpass
-
 import json
-
 import requests
+
 try:
     import socks
 except ImportError:
     socks = None
-import six
 
+import six
 if six.PY2:
     from urlparse import urlparse
+    input = raw_input
 elif six.PY3:
     from urllib.parse import urlparse
+
 from .select import Select
 from .help import Inspector, GraphData, PaintGraph, _DRAW_GRAPHS
 from .manage import GlobalManager
@@ -27,12 +27,8 @@ from .array import ArrayData
 from .xpath_store import XpathStore
 from . import xpass
 
-try:
-    input = raw_input
-except NameError:
-    pass
-
 DEBUG = False
+STUBBORN = False
 
 
 # main entry point
@@ -60,20 +56,11 @@ class Interface(object):
             Proxy support requires the socks module be installed. This can be
             installed via pip::
 
-            pip install SocksiPy-branch
+            `pip install SocksiPy-branch`
 
         Or anonymously (unauthenticated):
 
         >>> central = Interface('http://central.xnat.org', anonymous=True)
-
-        Attributes
-        ----------
-        _mode: online | offline
-            Online or offline mode
-
-
-
-
     """
 
     def __init__(self, server=None, user=None, password=None, config=None,
@@ -108,18 +95,16 @@ class Interface(object):
                 to the hostname:
                 http://user:pass@hostname:port
 
-            verify: True, False, or path to file containing certificate for your site
-              Added to the requests Session, as documented here:
+            verify: True, False, or path to file containing certificate for
+              your site. Added to the requests Session, as documented here:
               http://docs.python-requests.org/en/latest/user/advanced/#ssl-cert-verification
-              Simplifies handling self-certified sites, or sites where there is an issue
-              with certification
+              Simplifies handling self-certified sites, or sites where there
+              is an issue with certification
 
         """
 
         self._interactive = False
-
         self._anonymous = anonymous
-
         self._verify = verify
 
         if self._anonymous:
@@ -155,7 +140,6 @@ class Interface(object):
                 self._user = connection_args['u']
                 self._pwd = connection_args['p']
 
-
                 if 'proxy' in connection_args:
                     self.__set_proxy(connection_args['proxy'])
                 else:
@@ -183,23 +167,15 @@ class Interface(object):
 
         self._callback = None
 
-        self._memcache = {}
-        self._memtimeout = 1.0
-        self._mode = 'online'
         self._struct = {}
         self._entry = None
-
-        self._last_memtimeout = 1.0
-        self._last_mode = 'online'
-
-        self._jsession = None #'authentication_by_credentials'
+        self._jsession = None  # 'authentication_by_credentials'
         self._connect_extras = {}
         self._connect()
 
         self.inspect = Inspector(self)
         self.select = Select(self)
         self.array = ArrayData(self)
-        # self.cache = CacheManager(self)
         self.manage = GlobalManager(self)
         self.xpath = XpathStore(self)
 
@@ -247,7 +223,7 @@ class Interface(object):
                 if is_xnat_error(self._jsession):
                     catch_error(self._jsession)
             except Exception as e:
-                if not '/data/JSESSION' in str(e):
+                if '/data/JSESSION' not in str(e):
                     raise e
 
         return self._entry
@@ -270,10 +246,10 @@ class Interface(object):
 
         self._http = requests.Session()
 
-        # requests verify defaults to True, but can be set from environment variables
-        # Leave as-is unless user has explicitly overridden it
+        # requests verify defaults to True, but can be set from environment
+        # variables Leave as-is unless user has explicitly overridden it
         if self._verify is not None:
-          self._http.verify = self._verify
+            self._http.verify = self._verify
 
         if not self._anonymous:
             self._http.auth = (self._user, self._pwd)
@@ -281,14 +257,15 @@ class Interface(object):
         if self._proxy_url:
             self._http.proxies = {'http': self._proxy_url.geturl()}
 
-
-        # Turns out this doesn't work any more: XNAT doesn't do the 401 response that forces
-        # httplib2 to re-submit the request with credentials. See where the Authorization header
-        # is added manually in the _exec function.
+        # Turns out this doesn't work any more: XNAT doesn't do the 401
+        # response that forces httplib2 to re-submit the request with
+        # credentials. See where the Authorization header is added manually in
+        # the _exec function.
         # if not self._anonymous:
         #    self._http.add_credentials(self._user, self._pwd)
 
-    def _exec(self, uri, method='GET', body=None, headers=None, force_preemptive_auth=False, **kwargs):
+    def _exec(self, uri, method='GET', body=None, headers=None,
+              force_preemptive_auth=False, **kwargs):
         """ A wrapper around a simple httplib2.request call that:
                 - avoids repeating the server url in the request
                 - deals with custom caching mechanisms :: Depricated
@@ -307,19 +284,24 @@ class Interface(object):
                 Additional headers for the HTTP request.
             force_preemptive_auth: boolean
                 .. note:: Depricated as of 1.0.0.0
-                Indicates whether the request should include an Authorization header with basic auth credentials.
+                Indicates whether the request should include an Authorization
+                header with basic auth credentials.
             **kwargs: dictionary
-                Additional parameters to pass directly to the Requests HTTP call.
+                Additional parameters to pass directly to the Requests HTTP
+                call.
 
             HTTP:GET
             ----------
-                When calling with GET as method, the body parameter can be a key:value dictionary containing
-                request parameters or a string of parameters. They will be url encoded and appended to the url.
+                When calling with GET as method, the body parameter can be a
+                key:value dictionary containing request parameters or a string
+                of parameters. They will be url encoded and appended to the
+                url.
 
             HTTP:POST
             ----------
-                When calling with POST as method, the body parameter can be a key:value dictionary containing
-                request parameters they will be url encoded and appended to the url.
+                When calling with POST as method, the body parameter can be a
+                key:value dictionary containing request parameters they will
+                be url encoded and appended to the url.
 
         """
 
@@ -335,31 +317,49 @@ class Interface(object):
 
         response = None
 
-        if method is 'PUT':
-            response = self._http.put(uri, headers=headers, data=body, **kwargs)
-        elif method is 'GET':
-            response = self._http.get(uri, headers=headers, params=body, **kwargs)
-        elif method is 'POST':
-            response = self._http.post(uri, headers=headers, data=body, **kwargs)
-        elif method is 'DELETE':
-            response = self._http.delete(uri, headers=headers, data=body, **kwargs)
-        elif method is 'HEAD':
-            response = self._http.head(uri, headers=headers, data=body, **kwargs)
-        else:
-            print('unsupported HTTP method')
+        def request(method, uri, headers, body, kwargs):
+            if method == 'PUT':
+                response = self._http.put(uri, headers=headers, data=body,
+                                          **kwargs)
+            elif method == 'GET':
+                response = self._http.get(uri, headers=headers, params=body,
+                                          **kwargs)
+            elif method == 'POST':
+                response = self._http.post(uri, headers=headers, data=body,
+                                           **kwargs)
+            elif method == 'DELETE':
+                response = self._http.delete(uri, headers=headers, data=body,
+                                             **kwargs)
+            elif method == 'HEAD':
+                response = self._http.head(uri, headers=headers, data=body,
+                                           **kwargs)
+            else:
+                print('Unsupported HTTP method (%s)' % method)
+                return
+            return response
+
+        response = request(method, uri, headers, body, kwargs)
+        if response is None:
             return
 
-        if (response is not None and not response.ok) or is_xnat_error(response.content):
+        # Dirty trick to help Travis CI tests on CENTRAL: consider fixing it
+        if STUBBORN:
+            if (response is not None and response.status_code == 500):
+                print('Retrying request... %s' % uri)
+                response = request(method, uri, headers, body, kwargs)
+
+        if (response is not None and not response.ok) or \
+           is_xnat_error(response.content):
             if DEBUG:
                 print(response.content)
                 print(response.status_code)
 
             catch_error(response.content, '''pyxnat._exec failure:
-    URI: {response.url}
-    status code: {response.status_code}
-    headers: {response.headers}
-    content: {response.content}
-'''.format(response=response))
+                    URI: {response.url}
+                    status code: {response.status_code}
+                    headers: {response.headers}
+                    content: {response.content}
+                '''.format(response=response))
 
         return response.content
 
@@ -403,11 +403,13 @@ class Interface(object):
         if DEBUG:
             print('GET HEAD')
 
-        response = self._http.head('{server}{uri}'.format(server=self._server, uri=uri))
+        response = self._http.head('{server}{uri}'.format(server=self._server,
+                                                          uri=uri))
 
         if not response.ok:
             time.sleep(1)
-            self._http.head('{server}{uri}'.format(server=self._server, uri=uri))
+            self._http.head('{server}{uri}'.format(server=self._server,
+                                                   uri=uri))
 
         return response.headers
 
@@ -447,7 +449,6 @@ class Interface(object):
         with open(location, 'w') as fp:
             json.dump(config, fp)
 
-
     def load_config(self, location):
         """ Loads a configuration file and replaces current connection
             parameters.
@@ -469,7 +470,6 @@ class Interface(object):
             with open(location, 'rb') as fp:
                 config = json.load(fp)
 
-
             self._server = str(config['server'])
             self._user = str(config['user'])
             self._pwd = str(config['password'])
@@ -484,7 +484,15 @@ class Interface(object):
             raise Exception('Configuration file does not exist.')
 
     def version(self):
-        return self._exec('/data/version')
+        """
+            Get version of the currently running XNAT instance.
+        """
+        from pyxnat.core.errors import DatabaseError
+        try:
+            return self._exec('/data/version')
+        except DatabaseError:
+            j = self._exec('/xapi/siteConfig/buildInfo').decode()
+            return json.loads(j)
 
     def set_logging(self, level=0):
         pass
@@ -495,7 +503,6 @@ class Interface(object):
         """
         self._exec('/data/JSESSION', method='DELETE')
         self._http.close()
-
 
     def get(self, uri, **kwargs):
         '''
@@ -548,7 +555,7 @@ class Interface(object):
 
     def close_jsession(self):
         '''
-        Closes the session with XNAT server and consumes the JSESSIONID token
+        Closes the session with XNAT server and consumes the JSESSIONID token.
         '''
         uri = '/data/JSESSION'
         response = self.delete(uri)
